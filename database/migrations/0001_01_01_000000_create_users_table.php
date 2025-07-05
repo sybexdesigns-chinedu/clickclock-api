@@ -20,6 +20,7 @@ return new class extends Migration
             $table->enum('status', ['active', 'suspended', 'banned'])->default('active');
             $table->string('email_token')->nullable();
             $table->string('reset_token')->nullable();
+            $table->boolean('is_social');
             $table->timestamps();
         });
 

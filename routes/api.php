@@ -5,11 +5,9 @@ use App\Models\Interest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AdController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\EntryController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\TicketController;
@@ -18,24 +16,18 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WebhookController;
 use App\Http\Middleware\VerifyPaypalWebhook;
-use App\Http\Controllers\DiscoveryController;
 use App\Http\Controllers\LivestreamController;
-use App\Http\Controllers\CompetitionController;
 use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\CommentReplyController;
-use App\Http\Controllers\EntryCommentController;
 use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\SubscriptionController;
-use App\Http\Controllers\VerificationController;
-use App\Http\Controllers\EntryCommentReplyController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/verify-account', [AuthController::class, 'verifyAccount']);
+    Route::patch('/verify-email', [AuthController::class, 'verifyEmail']);
     Route::post('/resend-email-token', [AuthController::class, 'resendEmailToken']);
     Route::post('/send-reset-token', [AuthController::class, 'sendPasswordResetToken']);
-    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+    Route::patch('/reset-password', [AuthController::class, 'resetPassword']);
 });
 
 Route::get('payment/paypal/success', [PaymentController::class, 'paypalPaymentSuccess'])->name('payment.paypal.success');
@@ -124,10 +116,9 @@ ROute::group(['middleware' => 'auth:sanctum'], function () {
     Route::post('profile/check-username', [ProfileController::class, 'checkUsername']);
     Route::put('profile/change-password', [ProfileController::class, 'changePassword']);
     Route::put('profile/change-image', [ProfileController::class, 'changeImage']);
+    Route::get('profile/top-broadcasters', [ProfileController::class, 'getTopBroadcasters']);
 
     Route::get('user', [UserController::class, 'index']);
-    Route::get('user/get-creators', [UserController::class, 'getCreators']);
-    Route::get('user/my-details', [UserController::class, 'show']);
     Route::post('user/follow/{id}', [UserController::class, 'follow']);
     Route::delete('user/unfollow/{id}', [UserController::class, 'unfollow']);
     Route::delete('user/logout', [UserController::class, 'logout']);

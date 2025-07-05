@@ -17,8 +17,9 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'email' => $this->email,
             'coins' => $this->coins,
-            'is_verified' => $this->is_verified,
+            // 'is_verified' => $this->is_verified,
             'status' => $this->status,
+            'is_social' => $this->is_social
         ];
     }
 }

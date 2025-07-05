@@ -13,6 +13,7 @@ class Profile extends Model
 
     protected $casts = [
         'dob' => 'date',
+        'is_private' => 'boolean'
     ];
 
     public function user()
@@ -25,13 +26,8 @@ class Profile extends Model
         $this->attributes['username'] = strtolower(trim($value));
     }
 
-    public function setFirstNameAttribute($value)
+    public function setNameAttribute($value)
     {
-        $this->attributes['firstname'] = ucwords(strtolower(trim($value)));
-    }
-
-    public function setLastNameAttribute($value)
-    {
-        $this->attributes['lastname'] = ucwords(strtolower(trim($value)));
+        $this->attributes['name'] = ucwords(strtolower(trim($value)));
     }
 }

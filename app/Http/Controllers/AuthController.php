@@ -4,13 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Profile;
-use App\Mail\ResetToken;
-use App\Mail\VerifyEmail;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use App\Http\Resources\LoginResource;
 
 class AuthController extends Controller
@@ -35,7 +32,8 @@ class AuthController extends Controller
             'is_verified' => $verified,
             'email_token' => $token,
             'status' => 'active',
-            'coins' => 0
+            'coins' => 0,
+            'is_social' => $validated['isSocial']
         ]);
         $user->save();
         if (!$validated['isSocial']) return response()->json(['message' => 'User created successfully'], 201);
@@ -109,7 +107,7 @@ class AuthController extends Controller
                 'user' => new UserResource($user),
                 'token' => $token,
                 // 'stream_token' => $stream_token
-            ], 201);
+            ], 200);
         }
         else return response()->json(['message' => 'Invalid token'], 403); // entered wrong token
     }
@@ -117,9 +115,9 @@ class AuthController extends Controller
     public function resendEmailToken(Request $request) //on success, user should be directed to page to enter email reset token
     {
         $user = User::firstWhere('email', $request->email);
-        if(!$user) return response()->json(['message' => 'User not found'], 404);
+        if(!$user) return response()->json(['message' => 'Password reset token sent'], 200);
         $token = random_int(1000, 9999);
-        Mail::to($request->email)->send(new VerifyEmail($token));
+        // Mail::to($request->email)->send(new VerifyEmail($token));
         $user->email_token = $token;
         $user->save();
         return response()->json(['message' => 'Verification token resent'], 200);
@@ -128,9 +126,9 @@ class AuthController extends Controller
     public function sendPasswordResetToken(Request $request) //on success, user should be directed to page to enter token and new password
     {
         $user = User::firstWhere('email', $request->email);
-        if(!$user) return response()->json(['message' => 'User not found'], 404);
+        if(!$user) return response()->json(['message' => 'Password reset token sent'], 200);
         $token = random_int(100000, 999999);
-        Mail::to($request->email)->send(new ResetToken($token));
+        // Mail::to($request->email)->send(new ResetToken($token));
         $user->reset_token = $token;
         $user->save();
         return response()->json(['message' => 'Password reset token sent'], 200);

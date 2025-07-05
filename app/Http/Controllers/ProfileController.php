@@ -28,6 +28,26 @@ class ProfileController extends Controller
         //
     }
 
+    public function getTopBroadcasters(Request $request)
+    {
+        $users = Profile::whereHas('user', function ($q) {
+                $q->withCount('followers as active_followers_count')
+                    ->having('active_followers_count', '>', 3);
+            })
+            ->with(['user' => function ($q) {
+                $q->withCount('followers');
+            }])
+            ->get()
+            ->sortByDesc(fn ($profile) => $profile->country == 'United Kingdom' ? 1 : 0);
+        return $users->map(fn($profile) => [
+            'id' => $profile->user->id,
+            'username' => $profile->username,
+            'image' => asset('storage/' . $profile->image),
+            'followers' => $profile->user->followers_count,
+            'country' => $profile->country
+        ]);
+    }
+
     public function checkUsername(Request $request)
     {
         $suggestions = [];
@@ -80,7 +100,6 @@ class ProfileController extends Controller
                 break;
             }
         }
-
         return $suggestions;
     }
 
@@ -90,17 +109,14 @@ class ProfileController extends Controller
     public function store(Request $request)
     {
         if($request->user()->profile()->exists()) {
-            return new ProfileResource($request->user()->profile);
+            return new ProfileResource($request->user()->profile,false);
         }
         $data = $request->validate([
             'username' => 'required|string|regex:/^[a-zA-Z0-9_]+$/|min:3|max:20|unique:profiles,username',
-            'firstname' => 'required|string|regex:/^[a-zA-ZÀ-ÖØ-öø-ÿ\'-]+$/|max:255',
-            'lastname' => 'required|string|regex:/^[a-zA-ZÀ-ÖØ-öø-ÿ\'-]+$/|max:255',
+            'name' => 'required|string|regex:/^[a-zA-ZÀ-ÖØ-öø-ÿ\' -]+$/|max:255',
             'dob' => 'required|date',
-            'connect_with' => 'required|string',
             'gender' => 'required|string',
             'phone' => 'required|string',
-            'here_for' => 'required|array',
             'interests' => 'required|array',
             'interests.*' => 'integer',
             'image' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:5120',
@@ -114,39 +130,27 @@ class ProfileController extends Controller
             'city' => 'required|string',
             'country' => 'required|string'
         ], [
-            'username.regex' => 'Username can only contain letters, numbers and underscores. No spaces are allowed',
-            'firstname.regex' => 'First name must contain only letters, hyphens, and apostrophes. No spaces allowed.',
-            'lastname.regex' => 'Last name must contain only letters, hyphens, and apostrophes. No spaces allowed.'
+            'username.regex' => 'Username can only contain letters, numbers or underscores. No spaces are allowed',
+            'name.regex' => 'Name must contain only letters, hyphens, or apostrophes.',
         ]);
 
-        $imageName = $request->username.'.'.$request->file('image')->getClientOriginalExtension();
+        $imageName = $request->username.'.'.$request->file('image')->extension();
         $path = $request->file('image')->storeAs('profile_images', $imageName, 'public');
         $data['image'] = $path;
-        $data['user_id'] = $request->user()->id;
         // $data['meta_location'] = getCountryFromIp();
-        $data['here_for'] = implode(', ', $data['here_for']);
         unset($data['interests']);
         $profile = new Profile($data);
-        $user = $request->user()->referredBy()->first();
 
         DB::beginTransaction();
         try {
-            if($user) {
-                if(($user->referral_count + 1) % 7 == 0) {
-                    $user->referral_amount_earned += 14.00;
-                }
-                $user->referral_count += 1;
-                $user->save();
-            }
-            $profile->save();
+            $request->user()->profile()->save($profile);
             $profile->user->reward()->create();
-            $profile->user->discovery()->create();
             $request->user()->interests()->attach($request->interests);
 
             DB::commit(); // If everything succeeds, commit the transaction
             return response()->json([
                 'message' => 'Profile created successfully',
-                'profile' => new ProfileResource($profile)
+                'profile' => new ProfileResource($profile, false)
             ]);
         } catch (\Exception $e) {
             DB::rollBack(); // If anything fails, rollback all changes
@@ -161,13 +165,7 @@ class ProfileController extends Controller
     public function show(string $id)
     {
         $profile = Profile::where('user_id', $id)->first();
-        if (!$profile->user->discovery()->exists()) {
-            $profile->user->discovery()->create();
-        }
-        return response()->json([
-            'user' => new UserResource($profile->user),
-            'profile' => new ProfileResource($profile, true)
-        ]);
+        return new ProfileResource($profile);
     }
 
     /**
@@ -184,38 +182,28 @@ class ProfileController extends Controller
     public function update(Request $request, string $id)
     {
         $data = $request->validate([
+            'name' => 'required|string|regex:/^[a-zA-ZÀ-ÖØ-öø-ÿ\' -]+$/',
             'bio' => 'nullable|string',
-            'phone' => 'required|string',
-            'interests' => 'required|array',
-            'interests.*' => 'integer',
-            'city' => 'required|string',
-            'country' => 'required|string'
+            'social_link' => 'nullable|url'
+        ], [
+            'name.regex' => 'Name must contain only letters, hyphens, or apostrophes.'
         ]);
-        $request->user()->profile()->update([
-            'bio' => $data['bio'],
-            'phone' => $data['phone'],
-            'city' => $data['city'],
-            'country' => $data['country']
-        ]);
-        $request->user()->interests()->sync($data['interests']);
+        $request->user()->profile()->update($data);
         return response()->json(['message' => 'Profile updated successfully']);
     }
 
     public function changePassword(Request $request) {
         $request->validate([
-            'old_password' => 'required|string',
+            'current_password' => 'required|string',
             'new_password' => 'required|string|min:8|confirmed',
         ]);
 
         $user = $request->user();
-
         if (!Hash::check($request->old_password, $user->password)) {
-            return response()->json(['message' => 'Old password is incorrect'], 403);
+            return response()->json(['message' => 'Current password is incorrect'], 403);
         }
-
         $user->password = Hash::make($request->new_password);
         $user->save();
-
         return response()->json(['message' => 'Password changed successfully']);
     }
 

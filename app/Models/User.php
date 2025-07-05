@@ -39,8 +39,7 @@ class User extends Authenticatable
         return [
             'password' => 'hashed',
             'is_verified' => 'boolean',
-            'has_badge' => 'boolean',
-            'is_subscribed' => 'boolean'
+            'is_social' => 'boolean'
         ];
     }
 

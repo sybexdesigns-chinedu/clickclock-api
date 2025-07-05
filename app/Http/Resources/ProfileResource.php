@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
 
 use function Laravel\Prompts\form;
 
@@ -10,7 +11,7 @@ class ProfileResource extends JsonResource
 {
     protected bool $showExtra;
 
-    public function __construct($resource, $showExtra = false)
+    public function __construct($resource, $showExtra = true)
     {
         parent::__construct($resource);
         $this->showExtra = $showExtra;
@@ -22,6 +23,10 @@ class ProfileResource extends JsonResource
      */
     public function toArray($request): array
     {
+        $posts = collect();
+        if ($this->showExtra) {
+            $posts = $request->user()->posts()->withCount('likes')->get();
+        }
         return [
             'id' => $this->id,
             'username' => $this->username,
@@ -34,17 +39,14 @@ class ProfileResource extends JsonResource
             'city' => $this->city,
             'country' => $this->country,
             'social_link' => $this->social_link,
-            'interests' => $this->user->interests->pluck('name'),
+            // 'interests' => $this->user->interests->pluck('name'),
             $this->mergeWhen($this->showExtra, [
                 'posts_count' => formatNumber($this->user->posts->count()),
-                // 'followers' => $this->user->followers()->where('is_active', true)->get()->map(fn($follower) => [
-                //     'id' => $follower->id,
-                // ]),
+                'likes_count' => formatNumber($posts->sum('likes_count')),
                 'followers_count' => formatNumber($this->user->followers()->count()),
                 'following_count' => formatNumber($this->user->following()->count()),
                 'is_following' => $this->user->followers()->where('follower_id', $request->user()->id)->exists() || $request->user()->id === $this->user->id,
-                'likes_count' => formatNumber($this->user->liked_by->count()),
-                'posts' => PostResource::collection($this->user->posts)
+                'posts' => PostResource::collection($posts)
             ]),
         ];
     }
