@@ -51,7 +51,7 @@ class PostController extends Controller
         $data = $request->validate([
             'privacy' => 'required|string|in:public,friends,private',
             'allow_comments' => 'required|boolean',
-            'allow_duets' => 'required|boolean',
+            'allow_duet' => 'required|boolean',
             'caption' => 'nullable|string',
             'hashtags' => 'nullable|array',
             'location' => 'nullable|string',

@@ -28,6 +28,11 @@ class ProfileController extends Controller
         //
     }
 
+    public function getFollowers(Request $request)
+    {
+
+    }
+
     public function getTopBroadcasters(Request $request)
     {
         $users = Profile::whereHas('user', function ($q) {
@@ -220,7 +225,7 @@ class ProfileController extends Controller
         ]);
         $user = $request->user();
         $imageName = $user->profile->image;
-        if ($request->file('image')->storeAs('profile_images', $imageName, 'public'))
+        if ($request->file('image')->store($imageName, 'public'))
             return response()->json(['message' => 'Profile image updated successfully']);
         else
             return response()->json(['message' => 'Failed to update profile image'], 500);
