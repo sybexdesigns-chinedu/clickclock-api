@@ -17,7 +17,10 @@ class ProfileController extends Controller
      */
     public function index()
     {
-        return new ProfileResource(request()->user()->profile, true);
+        return response()->json([
+            'user' => new UserResource(request()->user()),
+            'profile' => new ProfileResource(request()->user()->profile, true)
+        ]);
     }
 
     /**
@@ -26,31 +29,6 @@ class ProfileController extends Controller
     public function search()
     {
         //
-    }
-
-    public function getFollowers(Request $request)
-    {
-
-    }
-
-    public function getTopBroadcasters(Request $request)
-    {
-        $users = Profile::whereHas('user', function ($q) {
-                $q->withCount('followers as active_followers_count')
-                    ->having('active_followers_count', '>', 3);
-            })
-            ->with(['user' => function ($q) {
-                $q->withCount('followers');
-            }])
-            ->get()
-            ->sortByDesc(fn ($profile) => $profile->country == 'United Kingdom' ? 1 : 0);
-        return $users->map(fn($profile) => [
-            'id' => $profile->user->id,
-            'username' => $profile->username,
-            'image' => asset('storage/' . $profile->image),
-            'followers' => $profile->user->followers_count,
-            'country' => $profile->country
-        ]);
     }
 
     public function checkUsername(Request $request)
@@ -187,11 +165,8 @@ class ProfileController extends Controller
     public function update(Request $request, string $id)
     {
         $data = $request->validate([
-            'name' => 'required|string|regex:/^[a-zA-ZÀ-ÖØ-öø-ÿ\' -]+$/',
             'bio' => 'nullable|string',
             'social_link' => 'nullable|url'
-        ], [
-            'name.regex' => 'Name must contain only letters, hyphens, or apostrophes.'
         ]);
         $request->user()->profile()->update($data);
         return response()->json(['message' => 'Profile updated successfully']);

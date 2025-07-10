@@ -17,6 +17,7 @@ class CommentResource extends JsonResource
             'id' => $this->id,
             'body' => $this->body,
             'created_at' => $this->created_at,
+            'reply_count' => $this->replies->count(),
             // 'updated_at' => $this->updated_at,
             'user' => [
                 'id' => $this->user->id,

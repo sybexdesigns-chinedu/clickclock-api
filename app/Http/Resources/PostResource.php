@@ -36,7 +36,7 @@ class PostResource extends JsonResource
                 'image' => $this->user->profile ? asset('storage/'.$this->user->profile->image) : null,
             ],
             'likes' => $this->likes->pluck('user_id'),
-            'is_following' => $this->user->followers()->where('follower_id', $request->user()->id)->where('is_active', true)->exists() || $this->user->id === $request->user()->id,
+            'is_following' => $this->user->followers()->where('follower_id', $request->user()->id)->exists() || $this->user->id === $request->user()->id,
             'comments_count' => formatNumber($this->comments->count())
         ];
     }

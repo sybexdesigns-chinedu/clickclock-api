@@ -3,9 +3,6 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\DB;
-
-use function Laravel\Prompts\form;
 
 class ProfileResource extends JsonResource
 {

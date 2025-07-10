@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Post;
 use App\Models\Comment;
 use App\Models\Notification;
 use Illuminate\Http\Request;
@@ -32,7 +31,7 @@ class CommentController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'post_id' => 'required|integer',
+            'post_id' => 'required|integer|exists:posts,id',
             'body' => 'required|string'
         ]);
         $data['user_id'] = $request->user()->id;
@@ -40,18 +39,18 @@ class CommentController extends Controller
         if(!$comment->post->allow_comments) return response()->json(['message' => 'Comments are not allowed on this post'], 403);
         if(!screenInput($data['body'])) $comment->status = 'pending';
         else {
-            $comment->post->most_engagements_points++;
-            $comment->post->no_of_engagements++;
+            $comment->post->increment('no_of_engagements');
             if($comment->post->user_id !== $comment->user_id) {
                 Notification::create([
                     'user_id' => $comment->post->user_id,
                     'action' => 'post comment',
+                    'type' => 'comment',
                     'action_id' => $comment->post->id,
                     'message' => "{$request->user()->profile->username} commented on your post",
                 ]);
             }
         }
-        $comment->push();
+        $comment->save();
         return response()->json(['message' => 'Comment created successfully'], 201);
     }
 
@@ -83,9 +82,7 @@ class CommentController extends Controller
             'body' => 'required|string'
         ]);
         if(!screenInput($data['body'])) {
-            $comment->post->most_engagements_points++;
-            $comment->post->no_of_engagements--;
-            $comment->push();
+            $comment->post()->decrement('no_of_engagements');
             $data['status'] = 'pending';
         }
         $comment->update($data);
@@ -100,9 +97,7 @@ class CommentController extends Controller
         if(request()->user()->id !== $comment->user_id)
             return response()->json(['message' => 'You are not authorized to delete this comment'], 403);
         $replyCount = $comment->replies->count();
-        $comment->post->no_of_engagements -= $replyCount;
-        $comment->post->most_engagements_points -= $replyCount + 1;
-        $comment->post->save();
+        $comment->post->decrement('no_of_engagements', $replyCount);
         $comment->delete();
         return response('', 204);
     }

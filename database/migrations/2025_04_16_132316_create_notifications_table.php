@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('message');
+            $table->enum('type', ['like', 'comment', 'follow']);
             $table->boolean('is_read')->default(false);
             $table->string('action');
             $table->unsignedBigInteger('action_id')->nullable();

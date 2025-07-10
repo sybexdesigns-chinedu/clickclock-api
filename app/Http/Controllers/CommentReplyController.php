@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Comment;
 use App\Models\CommentReply;
 use App\Models\Notification;
 use Illuminate\Http\Request;
@@ -32,19 +31,19 @@ class CommentReplyController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'comment_id' => 'required|integer',
+            'comment_id' => 'required|integer|exists:comments,id',
             'body' => 'required|string'
         ]);
         $data['user_id'] = $request->user()->id;
         $reply = new CommentReply($data);
         if(!screenInput($data['body'])) $reply->status = 'pending';
         else {
-            $reply->comment->post->no_of_engagements++;
-            $reply->comment->post->most_engagements_points++;
+            $reply->comment->post->increment('no_of_engagements');
             if($reply->comment->user_id !== $reply->user_id) {
                 Notification::create([
                     'user_id' => $reply->comment->user_id,
                     'action' => 'comment reply',
+                    'type' => 'comment',
                     'action_id' => $reply->comment->post->id,
                     'message' => "{$request->user()->profile->username} replied to your comment",
                 ]);
@@ -53,12 +52,13 @@ class CommentReplyController extends Controller
                 Notification::create([
                     'user_id' => $reply->comment->post->user_id,
                     'action' => 'post comment',
+                    'type' => 'comment',
                     'action_id' => $reply->comment->post->id,
                     'message' => "{$request->user()->profile->username} commented on your post",
                 ]);
             }
         }
-        $reply->push();
+        $reply->save();
         return response()->json(['message' => 'Comment created successfully'], 201);
     }
 
@@ -89,9 +89,7 @@ class CommentReplyController extends Controller
             'body' => 'required|string'
         ]);
         if(!screenInput($data['body'])) {
-            $reply->comment->post->no_of_engagements--;
-            $reply->comment->post->most_engagements_points--;
-            $reply->push();
+            $reply->comment->post->decrement('no_of_engagements');
             $data['status'] = 'pending';
         }
         $reply->update($data);
@@ -105,9 +103,7 @@ class CommentReplyController extends Controller
     {
         if(request()->user()->id !== $reply->user_id)
             return response()->json(['message' => 'You are not authorized to delete this comment'], 403);
-        $reply->comment->post->no_of_engagements--;
-        $reply->comment->post->most_engagements_points--;
-        $reply->comment->post->save();
+        $reply->comment->post->decrement('no_of_engagements');
         $reply->delete();
         return response('', 204);
     }

@@ -9,7 +9,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\MusicController;
-use App\Http\Controllers\StatusController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\PaymentController;
@@ -111,23 +110,23 @@ ROute::group(['middleware' => 'auth:sanctum'], function () {
     Route::get('post/{id}/reels', [PostController::class, 'getReels']);
     Route::get('post/getTopHashtags', [PostController::class, 'getTopHashtags']);
     Route::post('post/like/{post}', [PostController::class, 'like']);
-    Route::put('post/unlike/{post}', [PostController::class, 'unlike']);
+    Route::delete('post/unlike/{post}', [PostController::class, 'unlike']);
 
     Route::post('profile/check-username', [ProfileController::class, 'checkUsername']);
     Route::put('profile/change-password', [ProfileController::class, 'changePassword']);
     Route::put('profile/change-image', [ProfileController::class, 'changeImage']);
-    Route::get('profile/top-broadcasters', [ProfileController::class, 'getTopBroadcasters']);
 
-    Route::get('user', [UserController::class, 'index']);
     Route::post('user/follow/{id}', [UserController::class, 'follow']);
     Route::delete('user/unfollow/{id}', [UserController::class, 'unfollow']);
+    Route::get('user/top-broadcasters', [UserController::class, 'getTopBroadcasters']);
+    Route::get('user/{user}/followers', [UserController::class, 'getFollowers']);
+    Route::get('user/{user}/following', [UserController::class, 'getFollowing']);
     Route::delete('user/logout', [UserController::class, 'logout']);
 
     Route::resource('comment', CommentController::class);
     Route::resource('post', PostController::class);
     Route::resource('profile', ProfileController::class);
     Route::resource('reply', CommentReplyController::class);
-    Route::resource('status', StatusController::class);
     Route::resource('ticket', TicketController::class);
     // Route::resource('user', UserController::class);
 });

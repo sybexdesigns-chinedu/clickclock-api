@@ -164,18 +164,14 @@ class PostController extends Controller
      */
     public function like(Request $request, Post $post)
     {
-        $like = $post->likes()->firstOrCreate(['user_id' => request()->user()->id, 'is_active' => true]);
-        if (!$like->is_active) {
-            $like->is_active = true;
-            $like->save();
-        }
-        else $post->most_engagements_points++;
-        $post->no_of_engagements++;
-        $post->save();
+        if ($post->likes->contains('user_id', request()->user()->id)) return response()->json();
+        $post->likes()->firstOrCreate(['user_id' => request()->user()->id]);
+        $post->increment('no_of_engagements');
         if($post->user_id !== request()->user()->id) {
             Notification::create([
                 'user_id' => $post->user_id,
                 'action' => 'post like',
+                'type' => 'like',
                 'action_id' => $post->id,
                 'message' => "{$request->user()->profile->username} liked your post",
             ]);
@@ -188,10 +184,9 @@ class PostController extends Controller
      */
     public function unlike(Post $post)
     {
-        $status = $post->likes()->where('user_id', request()->user()->id)->update(['is_active' => false]);
-        if($status > 0 && $post->no_of_engagements > 0) $post->no_of_engagements--;
-        $post->save();
-        return response()->json(['message' => 'Post unliked successfully'], 201);;
+        $was_deleted = $post->likes()->where('user_id', request()->user()->id)->delete();
+        if($was_deleted && $post->no_of_engagements > 0) $post->decrement('no_of_engagements');
+        return response()->json(['message' => 'Post unliked successfully'], 200);;
     }
 
     public function getTopHashtags()

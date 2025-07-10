@@ -6,24 +6,12 @@ use Stripe\StripeClient;
 use App\Models\Transaction;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Http;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 
 class PaymentController extends Controller
 {
-    public function getPlans()
-    {
-        $plans = DB::table('plans')->get();
-        return $plans->map(fn ($plan) => [
-                'id' => $plan->id,
-                'name' => $plan->name,
-                'amount' => $plan->amount,
-                'interval' => $plan->interval,
-            ]);
-    }
-
     public function createPaypalPayment(Request $request)
     {
         $description = $request->description;
@@ -101,37 +89,6 @@ class PaymentController extends Controller
         Transaction::where('reference', $request->token)->delete();
         return response()->json(['message' => 'Transaction cancelled']);
     }
-
-    public function paypalPayouts()
-    {
-        $provider = new PayPalClient();
-        $accessToken = $provider->getAccessToken()['access_token'];
-        $response = Http::withToken($accessToken)
-            ->withHeaders([
-                'Content-Type' => 'application/json'
-            ])
-            ->post('https://api-m.sandbox.paypal.com/v1/payments/payouts', [
-                'sender_batch_header' => [
-                    'email_subject' => "You have received a payout!",
-                    "email_message" => "You have received your referral payout! Thanks for using our service!"
-                ],
-                'items' => [
-                    [
-                        'recipient_type' => 'EMAIL',
-                        'amount' => [
-                            'value' => '3000.00', // Amount to payout
-                            'currency' => 'GBP'
-                        ],
-                        'receiver' => 'sb-cws0a39006800@personal.example.com', // Customer PayPal email
-                        'note' => 'Here is your payout!',
-                        // Remember to put a unique prefix
-                        'sender_item_id' => uniqid(),
-                    ]
-                ]
-            ]);
-        return $response->json();
-    }
-
     public function createStripePayment(Request $request)
     {
         $description = $request->description;
