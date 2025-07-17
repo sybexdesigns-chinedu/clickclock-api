@@ -18,6 +18,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('level')->default(0);
             $table->decimal('diamonds', 10, 2)->default(0);
             $table->decimal('coins_spent', 10, 2)->default(0);
+            $table->decimal('weekly_coins_spent', 10, 2)->default(0);
             $table->decimal('coins_earned', 10, 2)->default(0);
             $table->unsignedBigInteger('no_of_livestreams')->default(0);
             $table->timestamps();

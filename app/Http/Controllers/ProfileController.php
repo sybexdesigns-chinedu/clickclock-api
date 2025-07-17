@@ -100,6 +100,8 @@ class ProfileController extends Controller
             'dob' => 'required|date',
             'gender' => 'required|string',
             'phone' => 'required|string',
+            'users' => 'nullable|array',
+            'users.*' => 'integer',
             'interests' => 'required|array',
             'interests.*' => 'integer',
             'image' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:5120',
@@ -122,13 +124,15 @@ class ProfileController extends Controller
         $data['image'] = $path;
         // $data['meta_location'] = getCountryFromIp();
         unset($data['interests']);
+        unset($data['users']);
         $profile = new Profile($data);
-
+        // return $request->users;
         DB::beginTransaction();
         try {
             $request->user()->profile()->save($profile);
             $profile->user->reward()->create();
             $request->user()->interests()->attach($request->interests);
+            $request->users ? $request->user()->following()->attach($request->users) : null;
 
             DB::commit(); // If everything succeeds, commit the transaction
             return response()->json([
@@ -204,6 +208,14 @@ class ProfileController extends Controller
             return response()->json(['message' => 'Profile image updated successfully']);
         else
             return response()->json(['message' => 'Failed to update profile image'], 500);
+    }
+
+    public function togglePrivacy(Request $request)
+    {
+        $profile = $request->user()->profile;
+        $profile->is_private = !$profile->is_private;
+        $profile->save();
+        return response()->json(['message' => 'Profile privacy updated successfully']);
     }
 
     /**

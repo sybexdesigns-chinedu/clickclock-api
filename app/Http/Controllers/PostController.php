@@ -31,8 +31,27 @@ class PostController extends Controller
         //     $q->where('user_id', '!=', request()->user()->id); //post does not belong to you
         // });
         // $posts = $query->orderByDesc('id')->get();
-        $posts = Post::orderByDesc('id')->get();
+        $posts = Post::latest()->get();
         return PostResource::collection($posts);
+    }
+
+    public function getHashtag(string $hashtag)
+    {
+        $posts = Post::whereLike('hashtags', '%'.$hashtag.'%')
+            ->where('status', 'approved')
+            ->orderByDesc('no_of_engagements')
+            ->get();
+        $index = 0;
+        do {
+            $description = $posts[$index]->caption ?? null;
+            $index++;
+        } while ($description == null);
+        return response()->json([
+            'hashtag' => $hashtag,
+            'description' => $description,
+            'count' => formatNumber($posts->count()),
+            'posts' => PostResource::collection($posts)
+        ]);
     }
 
     /**

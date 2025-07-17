@@ -108,17 +108,19 @@ ROute::group(['middleware' => 'auth:sanctum'], function () {
     Route::post('payment/stripe/create', [PaymentController::class, 'createStripePayment']);
 
     Route::get('post/{id}/reels', [PostController::class, 'getReels']);
-    Route::get('post/getTopHashtags', [PostController::class, 'getTopHashtags']);
+    Route::get('post/hashtag/{hashtag}', [PostController::class, 'getHashtag']);
     Route::post('post/like/{post}', [PostController::class, 'like']);
     Route::delete('post/unlike/{post}', [PostController::class, 'unlike']);
 
     Route::post('profile/check-username', [ProfileController::class, 'checkUsername']);
     Route::put('profile/change-password', [ProfileController::class, 'changePassword']);
     Route::put('profile/change-image', [ProfileController::class, 'changeImage']);
+    Route::put('profile/toggle-privacy', [ProfileController::class, 'togglePrivacy']);
 
     Route::post('user/follow/{id}', [UserController::class, 'follow']);
     Route::delete('user/unfollow/{id}', [UserController::class, 'unfollow']);
     Route::get('user/top-broadcasters', [UserController::class, 'getTopBroadcasters']);
+    Route::get('user/leaderboard', [UserController::class, 'getLeaderboard']);
     Route::get('user/{user}/followers', [UserController::class, 'getFollowers']);
     Route::get('user/{user}/following', [UserController::class, 'getFollowing']);
     Route::delete('user/logout', [UserController::class, 'logout']);

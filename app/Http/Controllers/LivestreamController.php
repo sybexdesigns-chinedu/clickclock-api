@@ -39,18 +39,21 @@ class LivestreamController extends Controller
             'gift_id' => 'required|exists:gifts,id'
         ]);
         $gift = Gift::find($request->gift_id);
-        if ($request->user()->wallet < $gift->price) {
+        if ($request->user()->coins < $gift->price) {
             return response()->json(['message' => 'You do not have enough coins'], 403);
         }
         // if ($livestream->user_id == $request->user()->id) {
         //     return response()->json(['message' => 'You cannot send a gift to yourself'], 403);
         // }
-        $request->user()->wallet -= $gift->price;
+        $request->user()->coins -= $gift->price;
         $request->user()->reward->coins_spent += $gift->price;
+        $request->user()->reward->weekly_coins_spent += $gift->price;
         $request->user()->push();
         // $livestream->coins_earned += ($gift->price * 70)/100;//remove 30% for the platform
         $livestream->coins_earned += $gift->price;//remove 30% for the platform
         $livestream->save();
+        $livestream->user->reward->diamonds += ($gift->price * 70)/100;
+        $livestream->user->reward->coins_earned += ($gift->price * 70)/100;
         $livestream->gifters()->create([
             'gifter_id' => $request->user()->id,
             'creator_id' => $livestream->user_id,
@@ -194,10 +197,11 @@ class LivestreamController extends Controller
         $livestream->children()->update(['is_active' => false]);
         $livestream->no_of_views = $livestream->viewers()->count();
         $livestream->is_active = false;
-        $livestream->user->reward->no_of_livestreams++;
-        $livestream->user->reward->diamonds = ($livestream->coins_earned * 70)/100;
-        $livestream->user->reward->coins_earned = ($livestream->coins_earned * 70)/100;
-        $livestream->push();
+        $livestream->user->reward->increment('no_of_livestreams');
+        // $livestream->user->reward->diamonds += ($livestream->coins_earned * 70)/100;
+        // $livestream->user->reward->coins_earned += ($livestream->coins_earned * 70)/100;
+        // $livestream->push();
+        $livestream->save();
         return response()->json(['message' => 'Livestream ended successfully'], 200);
     }
 }

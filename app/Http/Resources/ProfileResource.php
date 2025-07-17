@@ -36,6 +36,7 @@ class ProfileResource extends JsonResource
             'city' => $this->city,
             'country' => $this->country,
             'social_link' => $this->social_link,
+            'is_private' => $this->is_private,
             // 'interests' => $this->user->interests->pluck('name'),
             $this->mergeWhen($this->showExtra, [
                 'posts_count' => formatNumber($this->user->posts->count()),

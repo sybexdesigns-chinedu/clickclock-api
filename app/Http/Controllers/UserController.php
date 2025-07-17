@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\Reward;
 
 class UserController extends Controller
 {
@@ -24,6 +25,20 @@ class UserController extends Controller
         ]);
     }
 
+    public function getLeaderboard()
+    {
+        $rewards = Reward::orderByDesc('weekly_coins_spent')
+            ->take(50)
+            ->get();
+        return $rewards->map(fn($reward) => [
+            'id' => $reward->user->id,
+            'username' => $reward->user->profile->username,
+            'name' => $reward->user->profile->name,
+            'image' => asset('storage/' . $reward->user->profile->image),
+            'coins_spent' => formatNumber($reward->weekly_coins_spent)
+        ]);
+    }
+
     public function show()
     {
         //
@@ -31,7 +46,7 @@ class UserController extends Controller
 
     public function follow(Request $request, string $id)
     {
-        $request->user()->following()->attach($id);
+        $request->user()->following()->sync($id, false); // Use sync with false to avoid detaching other followers
         return response()->json(['message' => 'You are now following this user.'], 200);
     }
 
@@ -41,17 +56,18 @@ class UserController extends Controller
         return response()->json(['message' => 'You have unfollowed this user.'], 200);
     }
 
-    public function getFollowers(Request $request, User $user)
+    public function getFollowers(User $user)
     {
-        return $user->followers->map(fn ($user) => [
-            'id' => $user->id,
-            'username' => $user->profile->username,
-            'image' => asset('storage/' . $user->profile->image),
-            'followed_at' => $user->pivot->created_at->diffForHumans(),
+        return $user->followers->map(fn ($follower) => [
+            'id' => $follower->id,
+            'username' => $follower->profile->username,
+            'image' => asset('storage/' . $follower->profile->image),
+            'followed_at' => $follower->pivot->created_at->diffForHumans(),
+            'is_following' => $user->following()->where('following_id', $follower->id)->exists()
         ]);
     }
 
-    public function getFollowing(Request $request, User $user)
+    public function getFollowing(User $user)
     {
         return $user->following->map(fn ($user) => [
             'id' => $user->id,
