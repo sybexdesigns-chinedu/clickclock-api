@@ -49,8 +49,7 @@ class ProfileController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Username is already taken',
-                'errors' => $validator->errors(),
+                'message' => $validator->errors()->first('username'),
                 'suggestions' => $suggestions
             ], 422);
         }

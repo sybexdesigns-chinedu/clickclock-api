@@ -14,8 +14,12 @@ class PaymentController extends Controller
 {
     public function createPaypalPayment(Request $request)
     {
-        $description = $request->description;
-        $amount = $request->amount;
+        $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'coins' => 'required|integer|min:1'
+        ]);
+        $coins = $request->coins;
+        $description = "Purchased $request->coins coins";
         $provider = new PayPalClient();
         $accessToken = $provider->getAccessToken()['access_token'];
 
@@ -34,7 +38,7 @@ class PaymentController extends Controller
                     [
                         "amount" => [
                             "currency_code" => "GBP",
-                            "value" => $amount,
+                            "value" => $request->amount,
                         ],
                         "description" => $description,
                     ]
@@ -58,11 +62,11 @@ class PaymentController extends Controller
         Transaction::create([
             'user_id' => $request->user()->id,
             'reference' => $response->json('id'),
-            'amount' => $amount,
+            'amount' => $request->amount,
             'status' => 'PENDING',
             'type' => 'debit',
-            'title' => $description,
-            'description' => "Payment for $description"
+            'description' => $description,
+            'coins' => $coins
         ]);
         $approvalUrl = collect($response['links'])->where('rel', 'payer-action')->first()['href'];
         return response()->json(['url' => $approvalUrl]);
@@ -89,10 +93,15 @@ class PaymentController extends Controller
         Transaction::where('reference', $request->token)->delete();
         return response()->json(['message' => 'Transaction cancelled']);
     }
+
     public function createStripePayment(Request $request)
     {
-        $description = $request->description;
-        $amount = $request->amount;
+        $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'coins' => 'required|integer|min:1'
+        ]);
+        $coins = $request->coins;
+        $description = "Purchased $request->coins coins";
         $stripe = new StripeClient(env('STRIPE_SECRET'));
 
         // Create a Stripe Checkout session
@@ -103,10 +112,10 @@ class PaymentController extends Controller
                 'price_data' => [
                     'currency' => 'gbp',
                     'product_data' => [
-                        'name' => $description,
-                        'description' => "Payment for $description",
+                        'name' => 'Coin Purchase',
+                        'description' => "Purchase $request->coins ".config('app.name')." coins",
                     ],
-                    'unit_amount' => $amount*100, // Amount in cents (20.00 GBP)
+                    'unit_amount' => $request->amount*100, // Amount in cents (20.00 GBP)
                 ],
                 'quantity' => 1,
             ]],
@@ -121,11 +130,11 @@ class PaymentController extends Controller
         Transaction::create([
             'user_id' => $request->user()->id,
             'reference' => $response->client_reference_id,
-            'amount' => $amount,
+            'amount' => $request->amount,
             'status' => 'PENDING',
             'type' => 'debit',
-            'title' => $description,
-            'description' => "Payment for $description",
+            'description' => $description,
+            'coins' => $coins
         ]);
         return response()->json(['url' => $response['url']]);
     }
@@ -147,14 +156,21 @@ class PaymentController extends Controller
 
     public function createPaystackPayment(Request $request)
     {
-        $description = $request->description;
-        $amount = $request->amount;
+         $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'coins' => 'required|integer|min:1'
+        ]);
+        $coins = $request->coins;
+        $description = "Purchased $request->coins coins";
         $response = Http::withToken(env('PAYSTACK_SECRET_KEY'))
             ->withHeader('Content-Type', 'application/json')
             ->post('https://api.paystack.co/transaction/initialize', [
                 'email' => $request->user()->email,
-                'amount' => $amount*100,
-                'callback_url' => route('payment.paystack.success')
+                'amount' => $request->amount*100,
+                'callback_url' => route('payment.paystack.success'),
+                'metadata' => [
+                    'cancel_action' => route('payment.paystack.cancel')
+                ]
             ]);
 
         if (!$response->successful()) {
@@ -164,11 +180,11 @@ class PaymentController extends Controller
         Transaction::create([
             'user_id' => $request->user()->id,
             'reference' => $response->json('data.reference'),
-            'amount' => $amount,
+            'amount' => $request->amount,
             'status' => 'PENDING',
             'type' => 'debit',
-            'title' => $description,
-            'description' => "Payment for $description"
+            'description' => $description,
+            'coins' => $coins
         ]);
         return response()->json(['url' => $response->json()['data']['authorization_url']]);
     }
@@ -181,6 +197,8 @@ class PaymentController extends Controller
 
     public function paystackPaymentCancel(Request $request)
     {
-        return $request;
+        // dd($request->all());
+        // Transaction::where('reference', $session->client_reference_id)->delete();
+        return response()->json(['message' => 'Transaction cancelled']);
     }
 }

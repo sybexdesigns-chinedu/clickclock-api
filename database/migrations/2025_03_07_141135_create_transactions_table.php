@@ -15,11 +15,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('reference')->unique();
-            $table->string('title');
             $table->string('description');
             $table->string('type');
             $table->string('status');
             $table->string('amount');
+            $table->unsignedInteger('coins')->nullable();
             $table->timestamps();
 
         });

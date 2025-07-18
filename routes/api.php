@@ -16,7 +16,6 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WebhookController;
 use App\Http\Middleware\VerifyPaypalWebhook;
 use App\Http\Controllers\LivestreamController;
-use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\CommentReplyController;
 use App\Http\Controllers\NotificationController;
 
@@ -76,8 +75,6 @@ ROute::group(['middleware' => 'auth:sanctum'], function () {
             ]);
     });
 
-    Route::get('leaderboard', [LeaderboardController::class, 'getLeaderboard']);
-
     Route::get('livestream/{livestream}', [LivestreamController::class, 'show']);
     Route::post('livestream', [LivestreamController::class, 'store']);
     Route::post('livestream/gift/{livestream}', [LivestreamController::class, 'sendGift']);
@@ -102,7 +99,6 @@ ROute::group(['middleware' => 'auth:sanctum'], function () {
     Route::put('notification/mark-all-as-read', [NotificationController::class, 'markAllAsRead']);
     Route::delete('notification/{notification}', [NotificationController::class, 'delete']);
 
-    Route::get('payment/plans', [PaymentController::class, 'getPlans']);
     Route::post('payment/paypal/create', [PaymentController::class, 'createPaypalPayment']);
     Route::post('payment/paystack/create', [PaymentController::class, 'createPaystackPayment']);
     Route::post('payment/stripe/create', [PaymentController::class, 'createStripePayment']);

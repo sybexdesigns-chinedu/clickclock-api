@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('email')->unique();
             $table->string('password');
-            $table->decimal('coins', 10, 2)->default(0);
+            $table->unsignedBigInteger('coins')->default(0);
             $table->boolean('is_verified')->default(false);
             $table->enum('status', ['active', 'suspended', 'banned'])->default('active');
             $table->string('email_token')->nullable();
