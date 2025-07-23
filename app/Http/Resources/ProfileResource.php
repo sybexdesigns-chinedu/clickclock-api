@@ -44,7 +44,9 @@ class ProfileResource extends JsonResource
                 'followers_count' => formatNumber($this->user->followers()->count()),
                 'following_count' => formatNumber($this->user->following()->count()),
                 'is_following' => $this->user->followers()->where('follower_id', $request->user()->id)->exists() || $request->user()->id === $this->user->id,
-                'posts' => PostResource::collection($posts)
+                $this->mergeWhen(!$this->is_private, [
+                    'posts' => PostResource::collection($posts)
+                ]),
             ]),
         ];
     }
