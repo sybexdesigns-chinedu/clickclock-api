@@ -21,6 +21,7 @@ return new class extends Migration
             $table->enum('privacy', ['public', 'friends', 'private'])->default('public');
             $table->enum('status', ['approved', 'flagged', 'rejected'])->default('approved');
             $table->unsignedBigInteger('no_of_engagements')->default(0)->index();
+            $table->unsignedBigInteger('no_of_views')->default(0)->index();
             $table->string('location')->nullable();
             $table->string('remark')->nullable();
             $table->string('meta_location');

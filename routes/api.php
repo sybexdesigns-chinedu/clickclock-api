@@ -48,13 +48,13 @@ Route::post('sightengine/video-moderation/callback', function (Request $request)
 
 ROute::group(['middleware' => 'auth:sanctum'], function () {
     Route::get('gift', function () {
-        return Gift::orderBy('category')
+        return Gift::orderBy('name')
             ->get()
             ->map(fn ($gift) => [
                 'id' => $gift->id,
                 'name' => $gift->name,
                 'price' => $gift->price,
-                'category' => $gift->category,
+                // 'category' => $gift->category,
                 'icon' => asset('storage/gifts/'.$gift->icon)
             ]);
     });
@@ -105,6 +105,7 @@ ROute::group(['middleware' => 'auth:sanctum'], function () {
 
     Route::get('post/{id}/reels', [PostController::class, 'getReels']);
     Route::get('post/hashtag/{hashtag}', [PostController::class, 'getHashtag']);
+    Route::put('post/increment-views/{post}', [PostController::class, 'incrementViews']);
     Route::post('post/like/{post}', [PostController::class, 'like']);
     Route::delete('post/unlike/{post}', [PostController::class, 'unlike']);
 

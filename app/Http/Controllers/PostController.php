@@ -178,6 +178,12 @@ class PostController extends Controller
         return response()->json(['message' => 'Post updated successfully']);;
     }
 
+    public function incrementViews(Post $post)
+    {
+        $post->increment('no_of_views');
+        return response()->json(['message' => 'Post views incremented successfully']);
+    }
+
     /**
      * Like the specified post.
      */
