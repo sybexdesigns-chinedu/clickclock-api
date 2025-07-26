@@ -14,9 +14,9 @@ class LivestreamController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string'
         ]);
-        if ($request->user()->followers()->count() < 500) {
-            return response()->json(['message' => 'You need at least 500 followers to start a livestream'], 403);
-        }
+        // if ($request->user()->followers()->count() < 500) {
+        //     return response()->json(['message' => 'You need at least 500 followers to start a livestream'], 403);
+        // }
         livestream::create([
             'user_id' => $request->user()->id,
             'moderator_id' => $request->user()->id,

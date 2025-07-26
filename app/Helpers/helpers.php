@@ -43,27 +43,6 @@ function getLocation($city, $country)
     return collect($response->json()['results'][0])->only(['lon', 'lat'])->all();
 }
 
-function getDistanceInMiles($user1, $user2, $unit = 'miles')
-{
-    $earthRadius = $unit === 'miles' ? 3958.8 : 6371.0; // Radius in miles or kilometers
-
-    $lat1 = deg2rad($user1['lat']);
-    $lon1 = deg2rad($user1['lon']);
-    $lat2 = deg2rad($user2['lat']);
-    $lon2 = deg2rad($user2['lon']);
-
-    $latDelta = $lat2 - $lat1;
-    $lonDelta = $lon2 - $lon1;
-
-    $a = sin($latDelta / 2) ** 2 +
-         cos($lat1) * cos($lat2) *
-         sin($lonDelta / 2) ** 2;
-
-    $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-    return floor($earthRadius * $c);
-}
-
 function screenInput($input)
 {
     $perspectiveService = new PerspectiveService;
@@ -89,31 +68,6 @@ function getSpotifyToken()
 
     // Store in cache for the duration of token validity
     Cache::put('spotify_token', $token, now()->addSeconds($expiresIn - 60)); // Subtract 1 minute for safety
-    return $token;
-}
-
-function getReloadlyToken()
-{
-    if (Cache::has('reloadly_token')) {
-        return Cache::get('reloadly_token');
-    }
-
-    $response = Http::withHeaders([
-            'Accept' => 'application/json',
-            'Content-Type', 'application/json',
-        ])
-        ->post('https://auth.reloadly.com/oauth/token', [
-            'client_id'     => env('RELOADLY_CLIENT_ID'),
-            'client_secret' => env('RELOADLY_CLIENT_SECRET'),
-            'grant_type'    => 'client_credentials',
-            "audience"      => "https://giftcards-sandbox.reloadly.com"
-        ]);
-
-    $token = $response->json()['access_token'];
-    $expiresIn = $response->json()['expires_in']; // Typically 3600 seconds (1 hour)
-
-    // Store in cache for the duration of token validity
-    Cache::put('reloadly_token', $token, now()->addSeconds($expiresIn - 60)); // Subtract 1 minute for safety
     return $token;
 }
 
@@ -160,17 +114,4 @@ function formatNumber($num)
         return round($num / 1000, 1) . 'k';
     }
     return $num;
-}
-
-function getExchangeRates()
-{
-    if (Cache::has('exchange_rates')) {
-        return Cache::get('exchange_rates');
-    }
-
-    $response = Http::post('https://api.frankfurter.dev/v1/latest?base=GBP&symbols=USD,EUR');
-
-    $rates = $response->json()['rates'];
-    Cache::put('exchange_rates', $rates, now()->addHours(6));
-    return $rates;
 }

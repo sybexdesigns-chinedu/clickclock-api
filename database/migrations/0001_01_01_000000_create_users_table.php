@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('email_token')->nullable();
             $table->string('reset_token')->nullable();
             $table->boolean('is_social');
+            $table->boolean('was_active')->default(true);
             $table->timestamps();
         });
 
