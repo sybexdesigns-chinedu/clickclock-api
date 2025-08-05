@@ -14,7 +14,7 @@ class PostController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         // $current_location = getCountryFromIp();
         // $following = request()->user()->following->pluck('id');
@@ -32,6 +32,10 @@ class PostController extends Controller
         // });
         // $posts = $query->orderByDesc('id')->get();
         $posts = Post::latest()->get();
+        if(!$request->user()->was_active) {
+            $request->user()->was_active = true;
+            $request->user()->save();
+        }
         return PostResource::collection($posts);
     }
 
